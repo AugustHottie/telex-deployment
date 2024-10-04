@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: typesense-api-key
+type: Opaque
+stringData:
+  api-key: 089f5a2f5bf6afa93bfb82c4e5fdd75ef13713a96de1fb646e85a0e53c1377dd
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: typesense
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: typesense
+  template:
+    metadata:
+      labels:
+        app: typesense
+    spec:
+      containers:
+      - name: typesense
+        image: typesense/typesense:27.0
+        command:
+        - /bin/sh
+        - -c
+        args: 
+        - /opt/typesense-server --data-dir /data --api-key=$(API_KEY)
+        ports:
+        - containerPort: 8108
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: typesense-api-key
+              key: api-key
+      volumes:
+      - name: data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: typesense
+spec:
+  selector:
+    app: typesense
+  ports:
+  - protocol: TCP
+    port: 8108
+    targetPort: 8108

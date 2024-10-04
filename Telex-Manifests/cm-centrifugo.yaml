@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: centrifugo-configmap
+data: 
+  config.json: |
+    {
+      "token_hmac_secret_key": "01bba1e8-a378-49d1-8702-7593efe02004",
+      "admin_password": "6c8f3b50-6945-4854-a6e4-e8f1d6d69b1b",
+      "admin_secret": "3e2acec4-cae0-4d73-84f2-3ae2aff3fd47",
+      "api_key": "8945b19e-0bdd-41bb-8e8d-518a23354b7b",
+      "allowed_origins": "*",
+      "admin": true,
+      "port": 8000
+    }
+
+

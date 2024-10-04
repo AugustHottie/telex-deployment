@@ -1,0 +1,57 @@
+name: Telex EKS Deployment
+on: workflow_dispatch
+env:
+  AWS_REGION: us-east-1
+permissions: 
+  contents: read
+  id-token: write
+
+jobs:
+  Telex-EKS-Deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_CONNECT  }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Create terraform.tfvars file
+        run: |
+          cd Terraform
+          echo "cluster_name = \"${{ secrets.CLUSTER_NAME }}\"" > terraform.tfvars
+          echo "principal_arn = \"${{ secrets.PRINCIPAL_ARN }}\"" >> terraform.tfvars
+      - name: Terraform init
+        run: |
+          cd Terraform
+          terraform init
+      - name: Terraform apply
+        run: |
+          cd Terraform
+          terraform apply -auto-approve
+      - name: Update kubeconfig
+        run: |
+          aws eks --region ${{ env.AWS_REGION }} update-kubeconfig --name ${{ secrets.CLUSTER_NAME }}
+      - name: View resources
+        run: kubectl get pods -A
+      - name: Create Telex namespace
+        run: |
+          kubectl create namespace telex --dry-run=client -o yaml | kubectl apply -f -
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+      - name: Add ArgoCD Helm repo
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+      - name: Install ArgoCD
+        run: |
+          helm install my-argo-cd argo/argo-cd --version 7.6.7 --namespace argocd --create-namespace
+      - name: Wait for ArgoCD to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=600s deployment/my-argo-cd-argocd-server -n argocd
+      - name: Configure ArgoCD for Telex deployment
+        run: |
+          kubectl apply -f application.yaml
+          

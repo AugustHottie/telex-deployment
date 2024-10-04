@@ -1,0 +1,16 @@
+spec:
+  containers:
+  - name: frontend
+    image: augusthottie/telex_fe:1.0
+    ports:
+    - containerPort: 3000
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+    envFrom:
+    - secretRef:
+        name: telex-env-secrets

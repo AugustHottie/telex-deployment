@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: ['sh', '-c', 'until nc -z db 5432; do echo waiting for db; sleep 2; done;']
+      containers:
+      - name: backend
+        image: ekedonalds/telexbe:1.0
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8019
+      targetPort: 8019

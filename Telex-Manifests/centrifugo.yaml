@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: centrifugo
+  labels:
+    app: centrifugo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: centrifugo
+  template:
+    metadata:
+      labels:
+        app: centrifugo
+    spec:
+      containers:
+      - name: centrifugo
+        image: ekedonalds/centrifugo:1.0
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: config
+          mountPath: /centrifugo
+      volumes:
+      - name: config
+        configMap:
+          name: centrifugo-configmap
+          items:
+          - key: config.json
+            path: config.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: centrifugo
+spec:
+  selector:
+    app: centrifugo
+  ports:
+  - port: 8000
+    targetPort: 8000
